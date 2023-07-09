@@ -16,12 +16,17 @@ router.get("/getNotes", fetchuser, async (req, res) => {
 });
 
 // Route 2: Add a  note using: POST "api/notes/addNote" .
-router.post("/addNote",fetchuser,
+router.post(
+  "/addNote",
+  fetchuser,
   [
     check("title", "Title cannot be empty").exists(),
-    check("description", "Description should be 10 characters").isLength({ min: 10,}),
+    check("description", "Description should be 10 characters").isLength({
+      min: 10,
+    }),
     check("tag", "Add a tag to the note").exists(),
-  ],async (req, res) => {
+  ],
+  async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -37,6 +42,58 @@ router.post("/addNote",fetchuser,
       });
       const savedNote = await note.save();
       res.json(savedNote);
+    } catch (error) {
+      console.error(error.message);
+      res.status(400).send({ error: "Some error occurred" });
+    }
+  }
+);
+
+// Route 2: Add a  note using: POST "api/notes/addNote" .
+router.put(
+  "/updateNote/:id",
+  fetchuser,
+  [
+    check("title", "Title cannot be empty").exists(),
+    check(
+      "description",
+      "Description should be atleast 10 characters"
+    ).isLength({ min: 10 }),
+    check("tag", "Add a tag to the note").exists(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({ errors: errors.array() });
+      }
+
+      const { title, description, tag } = req.body;
+
+      //Create  anew Note object
+      const newNote = {};
+      if (title) {
+        newNote.title = title;
+      }
+      if (description) {
+        newNote.description = description;
+      }
+      if (tag) {
+        newNote.tag = tag;
+      }
+
+      ///Find the note to update and update it
+      let note = await Notes.findById(req.params.id);
+      if(!note) {
+        return res.status(404).send('Note not found');
+      }
+
+      if(note.user.toString() !== req.user.id){
+        return res.status(401).send('Unautorized Request');
+      }
+      
+      note = await Notes.findByIdAndUpdate(req.params.id, {$set: newNote}, {new : true} )
+      res.json(note);
 
     } catch (error) {
       console.error(error.message);
