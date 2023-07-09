@@ -49,7 +49,7 @@ router.post(
   }
 );
 
-// Route 2: Add a  note using: POST "api/notes/addNote" .
+// Route 3: Update a  note using: PUT "api/notes/updateNote/:id" .
 router.put(
   "/updateNote/:id",
   fetchuser,
@@ -103,3 +103,30 @@ router.put(
 );
 
 module.exports = router;
+
+
+//4. Delete a note using DELETE . /api/notes/delete/:id
+router.delete('/deletenote/:id', fetchuser, async (req, res) => {
+
+    try {
+        ///Find the note to update and update it
+        let note = await Notes.findById(req.params.id);
+        if(!note) {
+        return res.status(404).send('Note not found');
+        }
+
+        if(note.user.toString() !== req.user.id){
+        return res.status(401).send('Unautorized Request');
+        }
+
+        note = await Notes.findByIdAndDelete(req.params.id);
+
+        res.json({"Message" : "Success, note has been deleted"})
+    } catch (error) {
+        console.error(error.message);
+        res.status(400).send({ error: "Some error occurred" });
+    }
+
+    
+
+})
